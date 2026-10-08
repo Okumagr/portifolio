@@ -1,0 +1,11 @@
+---
+import { profile } from '../data';
+const year = new Date().getFullYear();
+---
+
+<footer class="relative border-t border-line/70 px-6 py-10 text-center">
+  <a href="#home" class="text-lg font-medium text-mist transition hover:text-aqua">Gabriel</a>
+  <p class="mt-2 text-xs text-muted">
+    © {year} {profile.name}. Crafted with Astro, React &amp; a little bit of water.
+  </p>
+</footer>

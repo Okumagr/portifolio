@@ -1,0 +1,37 @@
+---
+import InkSignature from './InkSignature.astro';
+import LangSwitch from './LangSwitch.astro';
+---
+
+<div class="page-paper" aria-hidden="true"></div>
+<header class="site-header">
+  <a class="mark" href="#home" data-go="home" aria-label="Gabriel Renan"><InkSignature id="site-signature" /></a>
+  <div class="tools">
+    <LangSwitch />
+    <button class="replay" type="button" data-replay><span class="label" data-i18n="intro.replay">Repetir animação</span> <span class="arrow" aria-hidden="true">↻</span></button>
+  </div>
+</header>
+
+<style>
+  .page-paper { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%236b5840' opacity='.23' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 50% 45%, #fffaf0 5%, transparent 75%);
+  }
+  .site-header { position: absolute; z-index: 7; inset: 0 0 auto 0; pointer-events: none; }
+  .site-header > * { pointer-events: auto; }
+  /* The name is written here, in the corner, and stays as the site's signature. */
+  .mark { position: absolute; top: .5rem; left: 2rem; display: block; width: clamp(150px, 15vw, 220px); }
+  .tools { position: absolute; top: 1.6rem; right: 3.5rem; display: flex; align-items: center; gap: 1.6rem; }
+  .replay { display: flex; align-items: center; gap: .9rem; border: 0; background: none; color: #625a4e; font: 500 13px/1 'Shippori Mincho', 'Yu Mincho', Georgia, serif; cursor: pointer; padding: .7rem 0 .7rem .7rem; }
+  .replay .arrow { font-size: 21px; }
+  .replay:hover { color: #29251f; }
+  .replay:focus-visible { outline: 1px solid #625a4e; outline-offset: 6px; }
+  @media (max-width: 1100px) {
+    .tools { right: 2rem; gap: 1rem; }
+    .replay .label { display: none; }
+  }
+  @media (max-width: 600px) {
+    .mark { top: .9rem; left: .9rem; width: 140px; }
+    .tools { top: 1.2rem; right: .8rem; gap: .2rem; }
+  }
+</style>

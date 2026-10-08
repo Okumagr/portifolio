@@ -1,0 +1,157 @@
+---
+import { inkStrokes, inkDrips, inkDuration } from '../lib/ink-strokes';
+import { dripShape } from '../lib/ink-fluid';
+interface Props { id?: string }
+const { id = 'gabriel-ink' } = Astro.props;
+---
+
+<ink-signature data-duration={inkDuration}>
+  <svg viewBox="0 0 1020 420" role="img" aria-labelledby={`${id}-title`}>
+    <title id={`${id}-title`} data-i18n="sig.title">Gabriel, escrito com pincel e tinta</title>
+    <defs>
+      <filter id={`${id}-bleed`} x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="1.6" />
+      </filter>
+      <filter id={`${id}-edge`} x="-5%" y="-10%" width="110%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="3" seed="12" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.4" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+      <filter id={`${id}-grain`} x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".62" numOctaves="3" seed="7" />
+        <feColorMatrix type="saturate" values="0" />
+        <feComponentTransfer><feFuncA type="linear" slope=".08" /></feComponentTransfer>
+        <feComposite in2="SourceGraphic" operator="in" />
+        <feBlend in2="SourceGraphic" mode="screen" />
+      </filter>
+      {inkStrokes.map(s => (
+        <mask id={`${id}-stroke-${s.index}`} maskUnits="userSpaceOnUse" x="0" y="0" width="1020" height="420">
+          <path data-ink-stroke data-delay={s.delay} data-duration={s.duration} d={s.path} pathLength="1"
+            fill="none" stroke="white" stroke-width={s.width + 14} stroke-linecap="round" />
+        </mask>
+      ))}
+      {inkStrokes.map(s => (
+        <mask id={`${id}-dry-${s.index}`} maskUnits="userSpaceOnUse" x="0" y="0" width="1020" height="420">
+          <path d={s.outline} fill="white" />
+          {[0, 1, 2, 3].map(bristle => (
+            <path d={s.path} fill="none" stroke="black" stroke-width={.25 + bristle * .09}
+              stroke-dasharray={`${9 + bristle * 7} ${4 + bristle * 2} 2 3`}
+              opacity={.16 + bristle * .055} transform={`translate(${(bristle - 1.3) * 2.3} ${bristle * .6})`} />
+          ))}
+        </mask>
+      ))}
+    </defs>
+    <g data-ink-layer fill="currentColor">
+      {inkStrokes.map(s => (
+        <g mask={`url(#${id}-stroke-${s.index})`} filter={`url(#${id}-edge)`}>
+          <path d={s.outline} opacity=".3" filter={`url(#${id}-bleed)`} />
+          <path d={s.outline} filter={`url(#${id}-grain)`} mask={`url(#${id}-dry-${s.index})`} />
+          {/* Fine separated bristles run alongside the main brush. */}
+          <path d={s.path} fill="none" stroke="currentColor" stroke-width=".65" opacity=".5"
+            transform={`translate(${s.width * .39} 1.5)`} />
+          <path d={s.path} fill="none" stroke="currentColor" stroke-width=".4" opacity=".35"
+            transform={`translate(${-s.width * .44} -1)`} />
+        </g>
+      ))}
+      {inkDrips.map(d => (
+        <g data-ink-drip data-delay={d.delay} data-duration={d.duration} data-length={d.length} data-width={d.width}
+          data-source={d.source} transform={`translate(${d.x} ${d.y})`}>
+          <path data-fluid-edge d={dripShape(1, d.length, d.width)} opacity=".2" filter={`url(#${id}-bleed)`} />
+          <path data-fluid-core d={dripShape(1, d.length, d.width)} opacity=".94" />
+        </g>
+      ))}
+    </g>
+  </svg>
+</ink-signature>
+
+<style>
+  ink-signature { display: block; width: 100%; color: var(--signature-ink, #1c1814); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  /* Start undrawn before any script runs (no flash of finished ink on reload).
+     Without JavaScript the class is never added and the signature stays fully drawn. */
+  :global(.js) [data-ink-stroke] { stroke-dasharray: 1 2; stroke-dashoffset: 1; }
+  :global(.js) [data-ink-drip] { opacity: 0; }
+</style>
+
+<script>
+  import { dripShape } from '../lib/ink-fluid';
+  /** Public controls: play(), finish(), reset(). Geometry stays in [data-ink-layer].
+   * Events: ink:start and ink:complete (bubble to the intro or a future destination).
+   */
+  class InkSignature extends HTMLElement {
+    private animations: Animation[] = [];
+    private run = 0;
+    private frame = 0;
+    private releaseFluid: (() => void) | undefined;
+    reset() {
+      this.run++;
+      this.dataset.state = 'idle';
+      this.animations.forEach(animation => animation.cancel());
+      this.animations = [];
+      cancelAnimationFrame(this.frame);
+      this.releaseFluid?.();
+      this.releaseFluid = undefined;
+      this.querySelectorAll<SVGElement>('[data-ink-stroke]').forEach(el => {
+        el.style.strokeDasharray = '1 2';
+        el.style.strokeDashoffset = '1';
+      });
+      this.querySelectorAll<SVGElement>('[data-ink-drip]').forEach(el => el.style.opacity = '0');
+    }
+    finish() {
+      this.reset();
+      this.dataset.state = 'complete';
+      this.querySelectorAll<SVGElement>('[data-ink-stroke]').forEach(el => el.style.strokeDashoffset = '0');
+      this.querySelectorAll<SVGElement>('[data-ink-drip]').forEach(el => {
+        el.style.opacity = '1';
+        const d = dripShape(1, Number(el.dataset.length), Number(el.dataset.width));
+        el.querySelectorAll('path').forEach(path => path.setAttribute('d', d));
+      });
+    }
+    async play() {
+      this.reset();
+      const run = this.run;
+      this.dataset.state = 'writing';
+      this.dispatchEvent(new CustomEvent('ink:start', { bubbles: true }));
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        this.finish();
+        this.dispatchEvent(new CustomEvent('ink:complete', { bubbles: true }));
+        return;
+      }
+      const started = performance.now();
+      this.querySelectorAll<SVGElement>('[data-ink-stroke]').forEach(el => {
+        this.animations.push(el.animate([{ strokeDashoffset: '1' }, { strokeDashoffset: '0' }], {
+          duration: Number(el.dataset.duration),
+          delay: Number(el.dataset.delay), fill: 'forwards',
+          easing: 'cubic-bezier(.35,0,.25,1)',
+        }));
+      });
+      const drips = [...this.querySelectorAll<SVGElement>('[data-ink-drip]')].map(el => ({
+        el, paths: [...el.querySelectorAll('path')], delay: Number(el.dataset.delay),
+        duration: Number(el.dataset.duration), length: Number(el.dataset.length), width: Number(el.dataset.width),
+      }));
+      const fluid = new Promise<void>(resolve => {
+        this.releaseFluid = resolve;
+        const tick = (now: number) => {
+          if (run !== this.run) { resolve(); return; }
+          const elapsed = now - started;
+          for (const drip of drips) {
+            if (elapsed < drip.delay) continue;
+            const progress = Math.min(1, (elapsed - drip.delay) / drip.duration);
+            drip.el.style.opacity = String(Math.min(1, progress / .08));
+            const d = dripShape(progress, drip.length, drip.width);
+            drip.paths.forEach(path => path.setAttribute('d', d));
+          }
+          if (elapsed < Number(this.dataset.duration)) this.frame = requestAnimationFrame(tick);
+          else { this.releaseFluid = undefined; resolve(); }
+        };
+        this.frame = requestAnimationFrame(tick);
+      });
+      await Promise.all([fluid, ...this.animations.map(animation => animation.finished.catch(() => {}))]);
+      if (run === this.run) {
+        this.dataset.state = 'complete';
+        this.dispatchEvent(new CustomEvent('ink:complete', { bubbles: true }));
+      }
+    }
+    disconnectedCallback() { this.reset(); }
+  }
+  if (!customElements.get('ink-signature')) customElements.define('ink-signature', InkSignature);
+</script>

@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import Emakimono from '../components/Emakimono.astro';
+import { t } from '../i18n';
+
+const title = t('meta.title');
+const description = t('meta.desc');
+---
+
+<!doctype html>
+<html lang="pt-BR" data-lang="pt">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#f1e9da" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <main>
+      <!-- The runway is as tall as the scroll is wide: vertical scrolling drives the handscroll sideways. -->
+      <div class="run" data-run>
+        <div class="pin">
+          <SiteHeader />
+          <Emakimono />
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  html, body { background: #f1e9da; color: #29251f; }
+  .run { position: relative; height: 100svh; }
+  .pin { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+  ::selection { background: #9f3a2d33; color: #29251f; }
+</style>

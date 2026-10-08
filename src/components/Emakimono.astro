@@ -1,0 +1,548 @@
+---
+import { SiHtml5, SiJavascript, SiReact, SiTypescript } from 'react-icons/si';
+import InkLandscape from './InkLandscape.astro';
+import { exploring, profile, projects } from '../data';
+import { murals } from '../art';
+import { t } from '../i18n';
+
+const skills = [
+  { name: 'React', Icon: SiReact },
+  { name: 'JavaScript', Icon: SiJavascript },
+  { name: 'TypeScript', Icon: SiTypescript },
+  { name: 'HTML5', Icon: SiHtml5 },
+];
+const stops = [
+  { id: 'home', mark: '一', key: 'nav.home' },
+  { id: 'about', mark: '二', key: 'nav.about' },
+  { id: 'projects', mark: '三', key: 'nav.projects' },
+  { id: 'contact', mark: '四', key: 'nav.contact' },
+];
+// Age spots scattered along the sheet (deterministic, so the paper looks the same every load).
+let seed = 99;
+const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const stains = Array.from({ length: 22 }, () => ({
+  x: rand() * 100, y: 12 + rand() * 76, w: 90 + rand() * 260, o: .03 + rand() * .06,
+}));
+const formEndpoint = import.meta.env.PUBLIC_FORM_ENDPOINT ?? '';
+---
+
+<section class={`emaki${murals.some(m => m.src) ? " has-art" : ""}`} aria-label="Portfolio" data-emaki data-ready="false">
+  <nav class="seal-nav" aria-label={t('nav.label')} data-i18n-aria="nav.label">
+    {stops.map(s => (
+      <a href={`#${s.id}`} data-go={s.id}><i aria-hidden="true">{s.mark}</i><span data-i18n={s.key}>{t(s.key)}</span></a>
+    ))}
+  </nav>
+
+  <div class="scroll" data-scroll>
+    <div class="frame" data-frame>
+      <div class="track" data-track>
+        <div class="sheet" aria-hidden="true">
+          {stains.map(s => <i style={`left:${s.x}%;top:${s.y}%;width:${s.w}px;height:${s.w * .7}px;opacity:${s.o}`}></i>)}
+        </div>
+
+        {murals.map(m => (
+          <figure class={`mural${m.src ? '' : ' empty'}`} data-mural data-from={m.from} data-to={m.to} aria-hidden="true">
+            {m.src
+              ? <img src={m.src} alt="" decoding="async" onerror="this.closest('.mural')?.classList.add('empty')" style={`object-fit:${m.fit ?? 'cover'};object-position:${m.position ?? 'center'};${m.filter ? `filter:${m.filter}` : ''}`} />
+              : <figcaption>{m.label} · {m.ratio}</figcaption>}
+          </figure>
+        ))}
+
+        <span class="space" aria-hidden="true"></span>
+
+        <article class="panel p-hero" id="home" data-anchor="home">
+          <div class="copy" data-veil>
+            <h1>
+              <span class="hi" data-i18n="hero.hi">{t('hero.hi')}</span>
+              <span><span data-i18n="hero.iam">{t('hero.iam')}</span> <b>{profile.name}</b><span data-i18n="hero.iamEnd">{t('hero.iamEnd')}</span></span>
+              <em data-i18n="hero.role">{t('hero.role')}</em>
+            </h1>
+            <p class="lede" data-i18n="hero.lede">{t('hero.lede')}</p>
+            <div class="cta">
+              <a class="btn solid" href="#contact" data-go="contact" data-i18n="hero.connect">{t('hero.connect')}</a>
+              <a class="btn" href={profile.cv} download data-i18n="hero.cv">{t('hero.cv')}</a>
+            </div>
+          </div>
+</article>
+
+        <div class="gap" aria-hidden="true"></div>
+
+        <article class="panel p-about" id="about" data-anchor="about">
+          <div class="cols">
+            <div class="text" data-veil>
+              <div class="head"><span class="seal sm">二</span><div><p class="eyebrow" data-i18n="about.eyebrow">{t('about.eyebrow')}</p><h2 data-i18n="about.title">{t('about.title')}</h2></div></div>
+              {['about.p1', 'about.p2', 'about.p3'].map(k => <p data-i18n={k}>{t(k)}</p>)}
+            </div>
+            <div class="skillbox" data-veil>
+              <h3 data-i18n="about.skills">{t('about.skills')}</h3>
+              <ul class="skills">
+                {skills.map(({ name, Icon }) => (
+                  <li><Icon size={38} /><span>{name}</span></li>
+                ))}
+              </ul>
+              <p class="explore"><span data-i18n="about.exploring">{t('about.exploring')}</span> {exploring.join(' · ')}</p>
+            </div>
+          </div>
+        </article>
+
+        <div class="gap" aria-hidden="true"></div>
+
+        <article class="panel p-chapter" id="projects" data-anchor="projects" data-veil>
+          <span class="seal">三</span>
+          <p class="eyebrow" data-i18n="projects.eyebrow">{t('projects.eyebrow')}</p>
+          <h2 data-i18n="projects.title">{t('projects.title')}</h2>
+          <p class="note" data-i18n="projects.note">{t('projects.note')}</p>
+        </article>
+
+        {projects.map((p, i) => (
+          <article class="panel p-project" id={i === projects.length - 1 ? 'work-last' : undefined}>
+            <div class="card">
+              <div class="painting">
+                {p.image
+                  ? <img src={p.image} alt="" loading="lazy" />
+                  : <InkLandscape variant={i + 4} sun={i % 2 === 0} id={`proj-${i}`} />}
+              </div>
+              <div class="meta">
+                <span class="seal sm">{['壱', '弐', '参'][i] ?? i + 1}</span>
+                <h3 data-i18n={`project.${i}.title`}>{t(`project.${i}.title`)}</h3>
+                <p data-i18n={`project.${i}.desc`}>{t(`project.${i}.desc`)}</p>
+                <ul class="tags">{p.tags.map(tag => <li>{tag}</li>)}</ul>
+                {(p.href || p.repo || p.inProgress) && (
+                  <div class="links">
+                    {p.inProgress && <span class="status" data-i18n="project.status">{t('project.status')}</span>}
+                    {p.href && <a href={p.href} target="_blank" rel="noreferrer" data-i18n="project.live">{t('project.live')}</a>}
+                    {p.repo && <a href={p.repo} target="_blank" rel="noreferrer" data-i18n="project.code">{t('project.code')}</a>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </article>
+        ))}
+
+        <div class="gap" aria-hidden="true"></div>
+
+        <article class="panel p-contact" id="contact" data-anchor="contact">
+          <div class="info" data-veil>
+            <div class="head">
+              <span class="seal sm">四</span>
+              <div>
+                <p class="eyebrow" data-i18n="contact.eyebrow">{t('contact.eyebrow')}</p>
+                <h2><span data-i18n="contact.title1">{t('contact.title1')}</span> <em data-i18n="contact.title2">{t('contact.title2')}</em></h2>
+              </div>
+            </div>
+            <ul class="facts">
+              <li><small data-i18n="contact.email">{t('contact.email')}</small><a href={`mailto:${profile.email}`}>{profile.email}</a></li>
+              <li><small data-i18n="contact.phone">{t('contact.phone')}</small><a href={profile.whatsapp}>{profile.phone}</a></li>
+              <li><small data-i18n="contact.location">{t('contact.location')}</small><span data-i18n="contact.locationValue">{t('contact.locationValue')}</span></li>
+            </ul>
+            <p class="social">
+              <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+              <a href={profile.github} target="_blank" rel="noreferrer">GitHub</a>
+              <a href={profile.whatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
+            </p>
+          </div>
+          <form class="form" data-veil data-form data-endpoint={formEndpoint} data-email={profile.email}>
+            <label><span data-i18n="contact.name">{t('contact.name')}</span><input name="name" required autocomplete="name" /></label>
+            <label><span data-i18n="contact.mail">{t('contact.mail')}</span><input name="email" type="email" required autocomplete="email" /></label>
+            <label><span data-i18n="contact.subject">{t('contact.subject')}</span><input name="subject" required /></label>
+            <label><span data-i18n="contact.message">{t('contact.message')}</span><textarea name="message" rows="4" required></textarea></label>
+            <button class="btn solid" type="submit" data-submit data-i18n="contact.send">{t('contact.send')}</button>
+          </form>
+        </article>
+
+        <article class="panel p-end" id="end" data-veil>
+          <p class="vert big">改善</p>
+          <p class="eyebrow" data-i18n="end.eyebrow">{t('end.eyebrow')}</p>
+          <p class="thanks" data-i18n-html="end.thanks" set:html={t('end.thanks')} />
+          <a class="back" href="#home" data-go="home" data-i18n="end.back">{t('end.back')}</a>
+        </article>
+
+        <span class="space" aria-hidden="true"></span>
+      </div>
+      <i class="shade s-top"></i><i class="shade s-bottom"></i>
+      <i class="shade s-left"></i><i class="shade s-right"></i>
+    </div>
+
+    <div class="roll roll-l" data-roll="l" aria-hidden="true"><span class="body"></span><span class="rod"></span></div>
+    <div class="roll roll-r" data-roll="r" aria-hidden="true"><span class="body"></span><span class="rod"></span></div>
+  </div>
+
+  <p class="hint" aria-hidden="true"><span data-i18n="hint.scroll">{t('hint.scroll')}</span><i></i></p>
+</section>
+
+<style>
+  .emaki {
+    --top: max(112px, 16svh);
+    --h: min(74svh, calc(100svh - var(--top) - 56px));
+    --ink: #1d1712; --red: #9f3a2d; --paper: #f1e9da; --mute: #4a4036;
+    --band: 22px; --space: 78px;
+    --roll-min: 24; --roll-max: 68; --roll-swing: 44;
+    --serif: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+    --body: 'Lora', Georgia, 'Times New Roman', serif;
+    --ui: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+    --fibre: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55 .5' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .95 -.4'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23f)'/%3E%3C/svg%3E");
+    --blotch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1800' height='900'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .009' numOctaves='3' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .58 0 0 0 0 .4 0 0 0 0 .18 0 0 0 1.1 -.5'/%3E%3C/filter%3E%3Crect width='1800' height='900' filter='url(%23b)'/%3E%3C/svg%3E");
+    position: absolute; inset: 0; z-index: 1; pointer-events: none; color: var(--ink); font-family: var(--body); font-size: 17px; -webkit-font-smoothing: antialiased;
+    opacity: 0; visibility: hidden; transition: opacity .5s ease;
+  }
+  :global(html[lang='ja']) .emaki {
+    --body: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
+  }
+  :global(html[lang='ja']) .emaki p, :global(html[lang='ja']) .emaki li { line-height: 2; }
+  :global(html[lang='ja']) .emaki h1, :global(html[lang='ja']) .emaki h2, :global(html[lang='ja']) .emaki h3, :global(html[lang='ja']) .emaki p { word-break: auto-phrase; text-wrap: pretty; }
+  :global(html[lang='ja']) .emaki .eyebrow, :global(html[lang='ja']) .emaki small, :global(html[lang='ja']) .emaki .form label span { text-transform: none; letter-spacing: .18em; }
+  .emaki[data-ready='true'] { opacity: 1; visibility: visible; }
+  .emaki > * { pointer-events: auto; }
+
+  /* Navigation: red hanko stamps */
+  .seal-nav { position: absolute; z-index: 8; top: 1.6rem; left: 50%; translate: -50% 0; display: flex; gap: 1.6rem; }
+  .seal-nav a { display: flex; align-items: center; gap: .55rem; font: 500 13px/1 var(--ui); letter-spacing: .1em; color: var(--mute); text-decoration: none; transition: color .25s; }
+  .seal-nav i { display: grid; place-items: center; width: 24px; height: 24px; font: normal 13px/1 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', Georgia, serif; color: var(--paper); background: var(--red); border-radius: 3px; opacity: .55; transition: opacity .25s, transform .25s; }
+  .seal-nav a:hover, .seal-nav a[aria-current='true'] { color: var(--ink); }
+  .seal-nav a:hover i, .seal-nav a[aria-current='true'] i { opacity: 1; transform: rotate(-4deg) scale(1.08); }
+
+  /* The handscroll: paper window between two wooden rolls */
+  .scroll { --lw: calc(var(--roll-min) * 1px); --rw: calc(var(--roll-max) * 1px); position: absolute; left: 0; right: 0; top: var(--top); height: var(--h); }
+  .frame { position: absolute; inset: 0; overflow: hidden; clip-path: inset(0 50% 0 50%); }
+  .emaki[data-ready='true'] .frame { clip-path: inset(0 0 0 0); }
+  .track { position: relative; display: flex; align-items: stretch; height: 100%; width: max-content; will-change: transform;
+    background: var(--fibre), var(--blotch), #f0e7cd; background-blend-mode: multiply, multiply, normal; }
+  /* Brocade mounting strips along the top and bottom edges */
+  .track::before, .track::after { content: ''; position: absolute; left: 0; right: 0; z-index: 3; height: var(--band); pointer-events: none;
+    background: repeating-linear-gradient(90deg, #2a2017 0 3px, #352a1e 3px 11px); }
+  .track::before { top: 0; border-bottom: 2px solid #b08d3c; box-shadow: 0 1px 0 #00000026; }
+  .track::after { bottom: 0; border-top: 2px solid #b08d3c; }
+  .sheet { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+  .sheet i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, #8a5a24, transparent); transform: translate(-50%, -50%); }
+  .shade { position: absolute; z-index: 4; pointer-events: none; }
+  .s-top { left: 0; right: 0; top: var(--band); height: 38px; background: linear-gradient(#5a37152e, transparent); }
+  .s-bottom { left: 0; right: 0; bottom: var(--band); height: 38px; background: linear-gradient(transparent, #5a37152e); }
+  .s-left { top: 0; bottom: 0; left: calc(var(--lw) - 2px); width: 46px; background: linear-gradient(90deg, #3a22104d, transparent); }
+  .s-right { top: 0; bottom: 0; right: calc(var(--rw) - 2px); width: 46px; background: linear-gradient(270deg, #3a22104d, transparent); }
+
+  /* The rolls: paper wound on a wooden rod with turned knobs. They thicken and thin as you read. */
+  .roll { position: absolute; z-index: 6; top: -20px; bottom: -20px; will-change: transform, width; }
+  .roll-l { left: 0; width: var(--lw); }
+  .roll-r { right: 0; width: var(--rw); }
+  .roll .body { position: absolute; z-index: 1; inset: 20px 0; border-radius: 3px;
+    background: linear-gradient(90deg, #5d4b33, #b9a67c 10%, #ebdfbd 34%, #f2e8c8 48%, #d6c59b 70%, #8a7757 92%, #4f402c);
+    box-shadow: 0 0 0 1px #2a201433, 0 14px 22px -10px #3a221080; }
+  .roll .body::before, .roll .body::after { content: ''; position: absolute; left: 0; right: 0; height: var(--band); background: repeating-linear-gradient(90deg, #2a2017 0 3px, #352a1e 3px 11px); }
+  .roll .body::before { top: 0; border-bottom: 2px solid #b08d3c; }
+  .roll .body::after { bottom: 0; border-top: 2px solid #b08d3c; }
+  .roll .rod { position: absolute; z-index: 0; left: 50%; top: 0; bottom: 0; width: 9px; margin-left: -4.5px; border-radius: 4px;
+    background: linear-gradient(90deg, #26160b, #75492a 38%, #a56d3f 52%, #4a2c17 82%, #1d1007); }
+  .roll .rod::before, .roll .rod::after { content: ''; position: absolute; left: 50%; width: 20px; height: 15px; margin-left: -10px; border-radius: 50% / 46%;
+    background: linear-gradient(90deg, #26160b, #8a5632 40%, #b27a49 52%, #4a2c17 84%, #1d1007); box-shadow: 0 1px 2px #0006; }
+  .roll .rod::before { top: -2px; }
+  .roll .rod::after { bottom: -2px; }
+
+  /* Everything is already inked into the sheet: the paper texture shows through the text. */
+  .panel { mix-blend-mode: multiply; }
+  /* Paintings: the white of the picture disappears into the paper and only the ink stays. */
+  .mural { position: absolute; top: 0; bottom: 0; z-index: 1; margin: 0; pointer-events: none; mix-blend-mode: multiply;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent calc(var(--band) + 2px), #000 16%, #000 86%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent calc(var(--band) + 2px), #000 16%, #000 86%, transparent);
+    mask-composite: intersect; }
+  .mural img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .mural.empty { display: none; }
+  /* Add ?slots to the address to see where each painting goes. */
+  .show-slots .mural.empty { display: grid; place-items: center; margin-block: calc(var(--band) + 4px); border: 2px dashed #9f3a2d99; background: #9f3a2d12; mask-image: none; -webkit-mask-image: none; mix-blend-mode: normal; }
+  .mural figcaption { font: 500 12px/1 var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+  .emaki a:focus-visible, .emaki button:focus-visible, .emaki input:focus-visible, .emaki textarea:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+  /* Where a painting sits behind text, a soft wash of paper keeps the words easy to read. */
+  .veil { display: none; position: absolute; z-index: 1; pointer-events: none; background: #f2e9cf; opacity: .78;
+    -webkit-mask-image: radial-gradient(closest-side, #000 52%, transparent 100%); mask-image: radial-gradient(closest-side, #000 52%, transparent 100%); }
+  .has-art .veil { display: block; }
+  .hint { position: absolute; z-index: 8; left: 50%; translate: -50% 0; bottom: 1rem; margin: 0; display: flex; align-items: center; gap: .6rem; font: 500 13px/1 var(--ui); letter-spacing: .12em; color: var(--mute); transition: opacity .5s; }
+  .hint i { width: 8px; height: 8px; border-right: 1.5px solid var(--red); border-bottom: 1.5px solid var(--red); rotate: 45deg; animation: nudge 1.8s ease-in-out infinite; }
+  .emaki.scrolled .hint { opacity: 0; pointer-events: none; }
+  @keyframes nudge { 50% { translate: 0 4px; } }
+  .space { flex: 0 0 var(--space); }
+  .gap { flex: 0 0 clamp(20px, 4vw, 70px); }
+  .panel { position: relative; z-index: 2; flex: 0 0 auto; height: 100%; padding: calc(var(--band) + clamp(1.2rem, 2.4vw, 2.2rem)) clamp(1.4rem, 3vw, 2.8rem); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+
+  .eyebrow { margin: 0; font: 500 12px/1.4 var(--ui); letter-spacing: .26em; text-transform: uppercase; color: var(--red); }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 400; }
+  .seal { display: inline-grid; place-items: center; width: 44px; height: 44px; font: normal 18px/1.05 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', Georgia, serif; color: #f4ead3; background: var(--red); border-radius: 4px; transform: rotate(-3deg); text-align: center; box-shadow: inset 0 0 0 2px #ffffff22; }
+  .seal.sm { width: 34px; height: 34px; font-size: 16px; flex: none; }
+  .head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.4rem; }
+  .head h2 { font-size: clamp(1.7rem, 2.8vw, 2.5rem); font-weight: 700; }
+  .head em, h1 em { color: var(--red); font-style: italic; }
+  .head h2 em { font-family: var(--body); font-weight: 500; }
+  .btn { display: inline-flex; align-items: center; min-height: 44px; padding: .75rem 1.6rem; font: 700 14px/1 var(--ui); letter-spacing: .05em; color: var(--ink); text-decoration: none; border: 1px solid var(--ink); background: transparent; cursor: pointer; transition: background .3s, color .3s, transform .3s; }
+  .btn:hover { background: var(--ink); color: #f4ead3; transform: translateY(-2px); }
+  .btn.solid { background: var(--ink); color: #f4ead3; }
+  .btn.solid:hover { background: var(--red); border-color: var(--red); }
+
+  /* Prologue: text on the left, painting on the right, Kaizen seal on the far edge */
+  /* Sized so that, on the first screen, the About text fits whole beside the Home and the skills stay out of sight. */
+  .p-hero { width: clamp(590px, calc(100vw - 800px), 1180px); display: flex; flex-direction: row; align-items: center; justify-content: flex-start; padding-right: clamp(1.2rem, 2.4vw, 2.2rem); }
+  .p-hero .copy { max-width: 480px; }
+  .p-hero h1 { margin-top: 0; font-size: clamp(1.9rem, 3.2vw, 2.9rem); line-height: 1.22; font-weight: 700; }
+  .p-hero h1 > span { display: block; }
+  .p-hero .hi { font-family: var(--body); font-weight: 500; font-size: clamp(2.4rem, 4.4vw, 3.9rem); font-style: italic; margin-bottom: .35rem; }
+  .p-hero h1 b { font-weight: 700; border-bottom: 2px solid var(--red); }
+  .p-hero h1 em { display: block; font-family: var(--body); font-weight: 500; font-size: .74em; margin-top: .4rem; }
+  .lede { max-width: 33ch; margin: 1.3rem 0 2rem; font-size: 1.08rem; line-height: 1.75; color: var(--ink); opacity: .86; }
+  .cta { display: flex; flex-wrap: wrap; gap: .9rem; }
+  .vert { writing-mode: vertical-rl; font: 500 14px/1 var(--serif); letter-spacing: .5em; color: var(--ink); }
+
+  /* Chapter I */
+  .p-about { width: min(90vw, 1100px); }
+  .p-about .cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(1.6rem, 3.4vw, 3.2rem); align-items: center; }
+  .p-about .text p { margin: 0 0 1.05rem; font-size: 1.03rem; line-height: 1.8; }
+  .skillbox h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+  .skills { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .skills li { display: flex; align-items: center; gap: .9rem; padding: .9rem 1rem; border: 1px solid #211e1a40; background: #f3ead06b; transition: border-color .3s, transform .3s, background .3s; }
+  .skills li:hover { border-color: var(--red); background: #f6eed8; transform: translateY(-3px); }
+  .skills svg { flex: none; color: var(--ink); transition: color .3s; }
+  .skills li:hover svg { color: var(--red); }
+  .skills span { font-size: 1rem; font-weight: 500; }
+  .explore { margin: 1.3rem 0 0; font: 500 14px/1.6 var(--ui); letter-spacing: .06em; color: var(--mute); }
+
+  /* Chapter II */
+  .p-chapter { width: min(60vw, 340px); align-items: flex-start; gap: .9rem; }
+  .p-chapter h2 { font-size: clamp(1.9rem, 3.2vw, 2.8rem); line-height: 1.15; font-weight: 700; }
+  .p-chapter .note { margin: 0; max-width: 24ch; font-size: 1.02rem; line-height: 1.75; color: var(--ink); opacity: .86; }
+  .p-project { width: min(88vw, 540px); padding-inline: clamp(.8rem, 1.6vw, 1.4rem); }
+  .card { height: 100%; display: flex; flex-direction: column; border: 1px solid var(--ink); background: #f5edd7d6; box-shadow: 4px 6px 0 #3a22101f; transition: transform .45s cubic-bezier(.22, 1, .36, 1), box-shadow .45s; }
+  .card:hover { transform: translateY(-5px) rotate(-.4deg); box-shadow: 8px 12px 0 #9f3a2d24; }
+  .painting { flex: 1 1 42%; min-height: 0; overflow: hidden; border-bottom: 1px solid var(--ink); background: #efe6d0; }
+  .painting img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .meta { position: relative; flex: 0 0 auto; padding: 1.2rem 1.4rem 1.3rem; }
+  .meta .seal { position: absolute; top: -17px; right: 1.2rem; box-shadow: 0 0 0 3px #f5edd7; }
+  .meta h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: .5rem; }
+  .meta p { margin: 0 0 1rem; font-size: .96rem; line-height: 1.65; color: var(--ink); opacity: .86; }
+  .tags { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: 0; padding: 0; }
+  .tags li { padding: .25rem .65rem; font: 500 12.5px/1.4 var(--ui); letter-spacing: .04em; border: 1px solid #211e1a40; }
+  .links { display: flex; gap: 1.3rem; align-items: center; margin-top: 1rem; font: 500 .92rem var(--ui); }
+  .links a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--red); }
+  .status { font: 700 11px/1 var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+
+  /* Chapter III */
+  .p-contact { width: min(92vw, 1100px); display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.6rem, 4vw, 3.4rem); align-items: center; }
+  .facts { list-style: none; margin: 0 0 1.4rem; padding: 0; display: grid; gap: 1.1rem; }
+  .facts small { display: block; font: 500 12px/1.4 var(--ui); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+  .facts a, .facts span { font-size: 1.08rem; color: var(--ink); text-decoration: none; word-break: break-word; }
+  .facts a:hover { color: var(--red); }
+  .social { display: flex; gap: 1.4rem; margin: 0; font: 500 .95rem var(--ui); }
+  .social a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--red); }
+  .form { display: grid; gap: 1rem; }
+  .form label span { display: block; font: 500 12px/1.4 var(--ui); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+  .form input, .form textarea { width: 100%; box-sizing: border-box; padding: .55rem 0; font: 500 1.08rem/1.5 var(--body); color: var(--ink); background: transparent; border: 0; border-bottom: 1.5px solid #1d171299; border-radius: 0; outline: none; resize: none; transition: border-color .3s; }
+  .form input:focus, .form textarea:focus { border-bottom-color: var(--red); }
+  .form .btn { justify-self: start; margin-top: .4rem; }
+
+  /* Epilogue */
+  .p-end { width: min(70vw, 420px); align-items: center; text-align: center; gap: 1rem; }
+  .vert.big { font-size: clamp(2.4rem, 5vw, 3.6rem); letter-spacing: .2em; }
+  .thanks { margin: 0; font: italic 500 1.12rem/1.7 var(--body); color: var(--mute); }
+  .back { font: 500 .95rem var(--ui); color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--red); }
+
+  /* Narrower windows: the menu keeps only its stamps so it never collides with the language switch. */
+  @media (max-width: 1100px) {
+    .seal-nav span { display: none; }
+    .seal-nav { gap: 1.3rem; }
+  }
+  @media (max-width: 760px) {
+    .emaki { --top: 104px; --h: min(74svh, calc(100svh - var(--top) - 96px)); --space: 34px; --roll-min: 14; --roll-max: 40; --roll-swing: 26;
+      --win: calc(100vw - var(--space) - 46px); }
+    .roll .rod::before, .roll .rod::after { width: 16px; margin-left: -8px; height: 12px; }
+    .seal-nav { gap: 1.6rem; top: auto; bottom: 3.5rem; }
+    .seal-nav span { display: none; }
+    .p-hero { width: var(--win); align-items: flex-start; padding: calc(var(--band) + 1.4rem) 1.1rem calc(var(--band) + 1rem); }
+    .p-hero .copy { padding-right: 2.6rem; }
+    .p-hero h1 em { font-size: .68em; }
+      /* Too tall for one phone screen: text and skills sit side by side inside the scroll. */
+    .p-about { width: auto; padding: 0; display: block; }
+    .p-about .cols { display: flex; gap: 0; height: 100%; }
+    .p-about .text, .p-about .skillbox { flex: 0 0 var(--win); box-sizing: border-box; padding: calc(var(--band) + 1rem) 1.1rem 1.4rem; display: flex; flex-direction: column; justify-content: center; }
+    .p-about .text p { font-size: .85rem; line-height: 1.7; }
+    .p-project { width: var(--win); }
+    .p-contact { width: var(--win); grid-template-columns: 1fr; align-content: center; gap: 1rem; }
+    .p-chapter { width: min(var(--win), 300px); }
+    .skills li { padding: .75rem .7rem; gap: .6rem; }
+    .skills svg { width: 30px; height: 30px; }
+    .skills span { font-size: .78rem; }
+  }
+</style>
+
+<script>
+  import { t } from '../i18n';
+  import { currentLang } from '../lib/lang';
+
+  // The page always opens from the start, so never restore an old scroll position on reload.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  scrollTo(0, 0);
+
+  const root = document.querySelector<HTMLElement>('[data-emaki]');
+  const run = document.querySelector<HTMLElement>('[data-run]');
+  type Signature = HTMLElement & { play(): Promise<void>; reset(): void; finish(): void };
+  const signature = document.querySelector<Signature>('.site-header ink-signature');
+  const replayButton = document.querySelector<HTMLButtonElement>('[data-replay]');
+  if (root && run) {
+    const scroll = root.querySelector<HTMLElement>('[data-scroll]')!;
+    const frame = root.querySelector<HTMLElement>('[data-frame]')!;
+    const track = root.querySelector<HTMLElement>('[data-track]')!;
+    const rollL = root.querySelector<HTMLElement>('[data-roll="l"]')!;
+    const rollR = root.querySelector<HTMLElement>('[data-roll="r"]')!;
+    const anchors = [...root.querySelectorAll<HTMLElement>('[data-anchor]')];
+    const navLinks = [...root.querySelectorAll<HTMLAnchorElement>('.seal-nav a')];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    // Roll thickness: paper moves from the right roll to the left as you read.
+    let LEFT_MIN = 24, RIGHT_MAX = 68, SWING = 44;
+    const readMetrics = () => {
+      const css = getComputedStyle(root);
+      LEFT_MIN = parseFloat(css.getPropertyValue('--roll-min')) || 24;
+      RIGHT_MAX = parseFloat(css.getPropertyValue('--roll-max')) || 68;
+      SWING = parseFloat(css.getPropertyValue('--roll-swing')) || 44;
+    };
+    readMetrics();
+    let ready = false, dist = 0, frameRaf = 0;
+    let unroll: Animation[] = [];
+
+    const space = () => parseFloat(getComputedStyle(root).getPropertyValue('--space')) || 78;
+    const anchorY = (el: HTMLElement) => clamp(el.offsetLeft - space(), 0, dist);
+
+    const murals = [...root.querySelectorAll<HTMLElement>('[data-mural]')];
+    const placeMurals = () => {
+      const bleed = 48;
+      murals.forEach(m => {
+        const a = track.querySelector<HTMLElement>(`#${m.dataset.from}`);
+        const b = track.querySelector<HTMLElement>(`#${m.dataset.to}`);
+        if (!a || !b) return;
+        m.style.left = `${a.offsetLeft - bleed}px`;
+        m.style.width = `${b.offsetLeft + b.offsetWidth - a.offsetLeft + bleed * 2}px`;
+      });
+    };
+    const veils: HTMLElement[] = [];
+    const placeVeils = () => {
+      if (!root.classList.contains('has-art')) return;
+      track.querySelectorAll<HTMLElement>('[data-veil]').forEach((el, i) => {
+        let x = 0, y = 0, node: HTMLElement | null = el;
+        while (node && node !== track) { x += node.offsetLeft; y += node.offsetTop; node = node.offsetParent as HTMLElement | null; }
+        const padX = 70, padY = 56;
+        const veil = veils[i] ?? (veils[i] = track.appendChild(Object.assign(document.createElement('i'), { className: 'veil' })));
+        veil.style.left = `${x - padX}px`;
+        veil.style.top = `${y - padY}px`;
+        veil.style.width = `${el.offsetWidth + padX * 2}px`;
+        veil.style.height = `${el.offsetHeight + padY * 2}px`;
+      });
+    };
+    if (new URLSearchParams(location.search).has('slots')) root.classList.add('show-slots');
+
+    const measure = () => {
+      readMetrics();
+      placeMurals();
+      placeVeils();
+      dist = Math.max(0, track.scrollWidth - frame.clientWidth);
+      run.style.height = ready ? `${innerHeight + dist}px` : '';
+    };
+    const apply = () => {
+      frameRaf = 0;
+      const y = ready ? clamp(scrollY, 0, dist) : 0;
+      const p = dist ? y / dist : 0;
+      track.style.transform = `translate3d(${-y}px,0,0)`;
+      root.classList.toggle('scrolled', y > 40);
+      scroll.style.setProperty('--lw', `${LEFT_MIN + SWING * p}px`);
+      scroll.style.setProperty('--rw', `${RIGHT_MAX - SWING * p}px`);
+      let current = anchors[0]?.dataset.anchor;
+      anchors.forEach(a => { if (anchorY(a) <= y + 60) current = a.dataset.anchor; });
+      if (dist && y >= dist - 4) current = anchors[anchors.length - 1]?.dataset.anchor;
+      navLinks.forEach(l => { if (l.dataset.go === current) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current'); });
+    };
+    const schedule = () => { if (!frameRaf) frameRaf = requestAnimationFrame(apply); };
+
+    /** Both rolls start together in the middle, closed; they part toward the edges and the paper unwinds between. */
+    const open = () => {
+      if (ready) return;
+      ready = true;
+      root.dataset.ready = 'true';
+      apply();
+      measure();
+      unroll.forEach(a => a.cancel());
+      if (reduce.matches) return;
+      const W = scroll.clientWidth, start = Math.round((LEFT_MIN + RIGHT_MAX) / 2 * .8);
+      const timing = { duration: 2000, delay: 250, easing: 'cubic-bezier(.5, 0, .15, 1)', fill: 'both' as const };
+      unroll = [
+        frame.animate([{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0% 0 0%)' }], timing),
+        rollL.animate([{ transform: `translateX(${W / 2 - start}px)`, width: `${start}px` }, { transform: 'translateX(0)', width: `${LEFT_MIN}px` }], timing),
+        rollR.animate([{ transform: `translateX(${-(W / 2 - start)}px)`, width: `${start}px` }, { transform: 'translateX(0)', width: `${RIGHT_MAX}px` }], timing),
+      ];
+      unroll[0].finished.then(() => unroll.forEach(a => a.cancel())).catch(() => undefined);
+    };
+    const close = () => {
+      if (!ready) return;
+      ready = false;
+      root.dataset.ready = 'false';
+      unroll.forEach(a => a.cancel());
+      run.style.height = '';
+      scrollTo(0, 0);
+      apply();
+    };
+    /** The paper unrolls while the name is written in the corner, both starting at once. */
+    const start = async () => {
+      await customElements.whenDefined('ink-signature');
+      open();
+      if (!signature) return;
+      if (reduce.matches) signature.finish(); else void signature.play();
+    };
+    replayButton?.addEventListener('click', () => {
+      signature?.reset();
+      close();
+      setTimeout(() => void start(), 500);
+    });
+
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', () => { measure(); schedule(); });
+    document.fonts?.ready.then(() => { measure(); schedule(); });
+    // Another language changes text length, so the scroll's length changes too.
+    document.addEventListener('lang:change', () => { measure(); schedule(); });
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-go]').forEach(link => {
+      link.addEventListener('click', event => {
+        const target = anchors.find(a => a.dataset.anchor === link.dataset.go);
+        if (!target || !ready) return;
+        event.preventDefault();
+        scrollTo({ top: anchorY(target), behavior: reduce.matches ? 'auto' : 'smooth' });
+      });
+    });
+    // Keyboard focus inside an off-screen panel brings that panel into view.
+    track.addEventListener('focusin', event => {
+      const panel = (event.target as HTMLElement).closest<HTMLElement>('.panel');
+      if (!panel || !ready) return;
+      frame.scrollLeft = 0;
+      scrollTo({ top: clamp(panel.offsetLeft - space(), 0, dist), behavior: 'auto' });
+    });
+
+    // Contact form: posts to PUBLIC_FORM_ENDPOINT when set, otherwise opens the mail app.
+    const form = root.querySelector<HTMLFormElement>('[data-form]');
+    const submit = root.querySelector<HTMLButtonElement>('[data-submit]');
+    form?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const endpoint = form.dataset.endpoint;
+      if (!endpoint) {
+        const subject = encodeURIComponent(String(data.get('subject')));
+        const body = encodeURIComponent(`${data.get('message')}\n\n— ${data.get('name')} (${data.get('email')})`);
+        location.href = `mailto:${form.dataset.email}?subject=${subject}&body=${body}`;
+        return;
+      }
+      submit!.textContent = t('contact.sending', currentLang());
+      try {
+        const res = await fetch(endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error('failed');
+        form.reset();
+        submit!.textContent = t('contact.sent', currentLang());
+      } catch {
+        submit!.textContent = t('contact.error', currentLang());
+      }
+      setTimeout(() => { submit!.textContent = t('contact.send', currentLang()); }, 4000);
+    });
+
+    void start();
+  }
+</script>

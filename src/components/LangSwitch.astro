@@ -1,0 +1,21 @@
+---
+import { LANGS } from '../i18n';
+---
+
+<div class="lang" role="group" aria-label="Idioma · Language · 言語">
+  {LANGS.map(l => <button type="button" data-lang={l.code} aria-pressed={l.code === 'pt' ? 'true' : 'false'} lang={l.html}>{l.label}</button>)}
+</div>
+
+<style>
+  .lang { display: flex; align-items: center; gap: .15rem; font: 500 13px/1 'Shippori Mincho', 'Yu Mincho', Georgia, serif; letter-spacing: .1em; }
+  .lang button { padding: .55rem .6rem; border: 0; background: none; color: #756b5d; cursor: pointer; border-bottom: 1px solid transparent; transition: color .25s, border-color .25s; }
+  .lang button + button { border-left: 1px solid #211e1a26; }
+  .lang button:hover { color: #211e1a; }
+  .lang button[aria-pressed='true'] { color: #211e1a; border-bottom-color: #9f3a2d; }
+  .lang button:focus-visible { outline: 1px solid #625a4e; outline-offset: 3px; }
+</style>
+
+<script>
+  import { initLang } from '../lib/lang';
+  initLang();
+</script>

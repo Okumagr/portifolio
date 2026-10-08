@@ -1,0 +1,22 @@
+---
+interface Props {
+  flip?: boolean;
+}
+const { flip = false } = Astro.props;
+// One seamless wave tile, repeated twice and scrolled by -50% for an endless loop.
+const line = 'M0 40 C 150 0, 300 80, 450 40 C 600 0, 750 80, 900 40 C 1050 0, 1200 80, 1350 40 C 1500 0, 1650 80, 1800 40';
+const d = `${line} L1800 80 L0 80 Z`;
+---
+
+<div class:list={['relative h-14 w-full overflow-hidden', flip && 'rotate-180']} aria-hidden="true">
+  <div class="absolute inset-y-0 left-0 flex w-[200%] animate-wave">
+    {
+      [0, 1].map(() => (
+        <svg viewBox="0 0 1800 80" preserveAspectRatio="none" class="h-full w-1/2">
+          <path d={d} fill="rgb(58 168 181 / 0.07)" />
+          <path d={line} fill="none" stroke="rgb(94 231 224 / 0.25)" stroke-width="1.2" vector-effect="non-scaling-stroke" />
+        </svg>
+      ))
+    }
+  </div>
+</div>
